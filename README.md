@@ -1,5 +1,5 @@
 # Low_level_C-Cpp
-> **Direct Register AVR Development | ATmega328P**
+> **Direct Register AVR Development**
 
 A high-performance repository for bare-metal C/C++ experiments on the AVR architecture. This project bypasses the Arduino abstraction layer to interface directly with silicon via memory-mapped I/O.
 
