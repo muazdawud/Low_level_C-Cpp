@@ -1,20 +1,31 @@
-/*Running the ffmpeg;
-	Open cmd after installing ffmpeg and type;
-		-->	ffmpeg -i <file path> -f u8 -acodec pcm_u8 -ac 1 -ar 8000 <destination>.raw
-*/
+/*
+ // Author: Dauda M. S.
+                                                                   /
+ // Github: https://github.com/muazdawud
+
+
+                                                                   /
+ This is my custom built serial organ, with a custom independent 
+ scaleGenerator.cpp program.
+                                                                   /
+                                                                   */
+
+
 #include<avr/io.h>
 #include<util/delay.h>
-#include"pinDefines.h"
-#include"USART.h"
+#include "pinDefines.h"
+#include "scale.h"
+#include "player.h"
+#include "USART.h"
 
 
-#define NOTE_DELAY        
+#define NOTE_DELAY        0xF000
 
 int main(void){
 
 	SPEAKER_DDR |= (1 << SPEAKER);
 	initUSART();
-	uint16_t noteDuration = NOTE_DELAY/2;
+	uint16_t noteDuration = NOTE_DELAY / 2;
 
 	char compInput;
 
@@ -22,16 +33,19 @@ int main(void){
 		'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',
 		'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'',
 		'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'
-	}
+	};
 
 	const uint16_t notes[] = {
-	}
+		D5, F5, Ax5, B5, A5, Gx5, E6, C6, Cx6, Dx6,
+		D6, F6, Ax6, B6, A6, Gx6, E7, C7, Cx7, Dx7, D7,
+		F7, Ax7, B7, A7, Gx7, E8, C8, Cx8, Dx8
+	};
 
 	uint8_t noteCheck;
 	uint8_t i;
 
 	while(1){
-		compInput = recieveByte();
+		compInput = receiveByte();
 		
 		if(noteDuration == NOTE_DELAY){
 			transmitByte('_');
@@ -56,7 +70,7 @@ int main(void){
 				noteDuration = NOTE_DELAY/2;
 			}
 			else{
-				sleep(noteDuration);
+				__sleep__(noteDuration);
 			}
 		}
 	}
