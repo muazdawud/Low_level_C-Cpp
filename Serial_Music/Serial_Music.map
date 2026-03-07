@@ -1,13 +1,11 @@
 Archive member included because of file (symbol)
 
-c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
-                              ../AVR-Programming-Library/USART.o (__udivmodqi4)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
                               ../AVR-Programming-Library/USART.o (__udivmodhi4)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
                               c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o (exit)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
-                              test.o (__do_copy_data)
+                              serial_organ.o (__do_copy_data)
 
 Discarded input sections
 
@@ -16,17 +14,20 @@ Discarded input sections
  .text          0x00000000        0x0 player.o
  .data          0x00000000        0x0 player.o
  .bss           0x00000000        0x0 player.o
+ .text          0x00000000        0x0 serial_organ.o
+ .data          0x00000000        0x0 serial_organ.o
+ .bss           0x00000000        0x0 serial_organ.o
  .text          0x00000000        0x0 test.o
  .data          0x00000000        0x0 test.o
  .bss           0x00000000        0x0 test.o
  .text          0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .data          0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .bss           0x00000000        0x0 ../AVR-Programming-Library/USART.o
- .text.receiveByte
-                0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .text.printString
                 0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .text.readString
+                0x00000000        0x0 ../AVR-Programming-Library/USART.o
+ .text.printByte
                 0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .text.printWord
                 0x00000000        0x0 ../AVR-Programming-Library/USART.o
@@ -38,9 +39,6 @@ Discarded input sections
                 0x00000000        0x0 ../AVR-Programming-Library/USART.o
  .text.getNumber
                 0x00000000        0x0 ../AVR-Programming-Library/USART.o
- .text          0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
- .data          0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
- .bss           0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
  .text          0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
  .data          0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
  .bss           0x00000000        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
@@ -70,6 +68,7 @@ Linker script and memory map
 Address of section .data set to 0x800100
 LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 LOAD player.o
+LOAD serial_organ.o
 LOAD test.o
 LOAD ../AVR-Programming-Library/USART.o
 LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
@@ -166,7 +165,7 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0x1ca
+.text           0x00000000      0x18e
  *(.vectors)
  .vectors       0x00000000       0x68 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
                 0x00000000                __vectors
@@ -251,26 +250,25 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  .text.playNote
                 0x00000096       0x34 player.o
                 0x00000096                playNote
- .text.sleep    0x000000ca        0xe player.o
-                0x000000ca                sleep
- .text.main     0x000000d8       0x5a test.o
+ .text.__sleep__
+                0x000000ca        0xe player.o
+                0x000000ca                __sleep__
+ .text.main     0x000000d8       0x72 serial_organ.o
                 0x000000d8                main
  .text.initUSART
-                0x00000132       0x22 ../AVR-Programming-Library/USART.o
-                0x00000132                initUSART
+                0x0000014a       0x22 ../AVR-Programming-Library/USART.o
+                0x0000014a                initUSART
  .text.transmitByte
-                0x00000154       0x10 ../AVR-Programming-Library/USART.o
-                0x00000154                transmitByte
- .text.printByte
-                0x00000164       0x4a ../AVR-Programming-Library/USART.o
-                0x00000164                printByte
- .text.libgcc   0x000001ae       0x18 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
-                0x000001ae                __udivmodqi4
-                0x000001c6                . = ALIGN (0x2)
+                0x0000016c       0x10 ../AVR-Programming-Library/USART.o
+                0x0000016c                transmitByte
+ .text.receiveByte
+                0x0000017c        0xe ../AVR-Programming-Library/USART.o
+                0x0000017c                receiveByte
+                0x0000018a                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x000001c6        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
-                0x000001c6                exit
-                0x000001c6                _exit
+ .fini9         0x0000018a        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+                0x0000018a                exit
+                0x0000018a                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -289,38 +287,40 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x000001c6        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .fini0         0x0000018a        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x000001ca                _etext = .
+                0x0000018e                _etext = .
 
-.data           0x00800100       0xb4 load address 0x000001ca
+.data           0x00800100       0x5a load address 0x0000018e
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
- .data.notes    0x00800100       0xb4 test.o
-                0x00800100                notes
  *(.rodata)
  *(.rodata*)
+ .rodata.notes.1278
+                0x00800100       0x3c serial_organ.o
+ .rodata.keys.1277
+                0x0080013c       0x1e serial_organ.o
  *(.gnu.linkonce.d*)
-                0x008001b4                . = ALIGN (0x2)
-                0x008001b4                _edata = .
-                0x008001b4                PROVIDE (__data_end, .)
+                0x0080015a                . = ALIGN (0x2)
+                0x0080015a                _edata = .
+                0x0080015a                PROVIDE (__data_end, .)
 
-.bss            0x008001b4        0x0
-                0x008001b4                PROVIDE (__bss_start, .)
+.bss            0x0080015a        0x0
+                0x0080015a                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
  *(COMMON)
-                0x008001b4                PROVIDE (__bss_end, .)
-                0x000001ca                __data_load_start = LOADADDR (.data)
-                0x0000027e                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x0080015a                PROVIDE (__bss_end, .)
+                0x0000018e                __data_load_start = LOADADDR (.data)
+                0x000001e8                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x008001b4        0x0
-                0x008001b4                PROVIDE (__noinit_start, .)
+.noinit         0x0080015a        0x0
+                0x0080015a                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x008001b4                PROVIDE (__noinit_end, .)
-                0x008001b4                _end = .
-                0x008001b4                PROVIDE (__heap_start, .)
+                0x0080015a                PROVIDE (__noinit_end, .)
+                0x0080015a                _end = .
+                0x0080015a                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)
@@ -376,65 +376,69 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  .debug_aranges
                 0x00000000       0x28 player.o
  .debug_aranges
-                0x00000028       0x20 test.o
+                0x00000028       0x20 serial_organ.o
  .debug_aranges
                 0x00000048       0x70 ../AVR-Programming-Library/USART.o
 
 .debug_pubnames
-                0x00000000      0x116
+                0x00000000      0x110
  *(.debug_pubnames)
  .debug_pubnames
-                0x00000000       0x29 player.o
+                0x00000000       0x2d player.o
  .debug_pubnames
-                0x00000029       0x25 test.o
+                0x0000002d       0x1b serial_organ.o
  .debug_pubnames
-                0x0000004e       0xc8 ../AVR-Programming-Library/USART.o
+                0x00000048       0xc8 ../AVR-Programming-Library/USART.o
 
-.debug_info     0x00000000      0x732
+.debug_info     0x00000000      0x795
  *(.debug_info)
  .debug_info    0x00000000      0x206 player.o
- .debug_info    0x00000206       0xe4 test.o
- .debug_info    0x000002ea      0x448 ../AVR-Programming-Library/USART.o
+ .debug_info    0x00000206      0x11b serial_organ.o
+ .debug_info    0x00000321        0x0 test.o
+ .debug_info    0x00000321      0x474 ../AVR-Programming-Library/USART.o
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev   0x00000000      0x366
+.debug_abbrev   0x00000000      0x379
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x129 player.o
- .debug_abbrev  0x00000129       0x9a test.o
- .debug_abbrev  0x000001c3      0x1a3 ../AVR-Programming-Library/USART.o
+ .debug_abbrev  0x00000129       0xac serial_organ.o
+ .debug_abbrev  0x000001d5        0x1 test.o
+ .debug_abbrev  0x000001d6      0x1a3 ../AVR-Programming-Library/USART.o
 
-.debug_line     0x00000000      0x698
+.debug_line     0x00000000      0x710
  *(.debug_line)
  .debug_line    0x00000000      0x161 player.o
- .debug_line    0x00000161       0xdb test.o
- .debug_line    0x0000023c      0x45c ../AVR-Programming-Library/USART.o
+ .debug_line    0x00000161       0xfb serial_organ.o
+ .debug_line    0x0000025c       0x24 test.o
+ .debug_line    0x00000280      0x490 ../AVR-Programming-Library/USART.o
 
 .debug_frame    0x00000000      0x110
  *(.debug_frame)
  .debug_frame   0x00000000       0x30 player.o
- .debug_frame   0x00000030       0x20 test.o
+ .debug_frame   0x00000030       0x20 serial_organ.o
  .debug_frame   0x00000050       0xc0 ../AVR-Programming-Library/USART.o
 
-.debug_str      0x00000000      0x250
+.debug_str      0x00000000      0x243
  *(.debug_str)
- .debug_str     0x00000000      0x104 player.o
-                                0x138 (size before relaxing)
- .debug_str     0x00000104       0x21 test.o
-                                 0xdd (size before relaxing)
- .debug_str     0x00000125      0x12b ../AVR-Programming-Library/USART.o
-                                0x1b4 (size before relaxing)
+ .debug_str     0x00000000      0x108 player.o
+                                0x13c (size before relaxing)
+ .debug_str     0x00000108       0x40 serial_organ.o
+                                 0xf6 (size before relaxing)
+ .debug_str     0x00000148       0xfb ../AVR-Programming-Library/USART.o
+                                0x1b1 (size before relaxing)
 
-.debug_loc      0x00000000      0x210
+.debug_loc      0x00000000      0x28b
  *(.debug_loc)
  .debug_loc     0x00000000       0x3b player.o
- .debug_loc     0x0000003b      0x1d5 ../AVR-Programming-Library/USART.o
+ .debug_loc     0x0000003b       0x48 serial_organ.o
+ .debug_loc     0x00000083      0x208 ../AVR-Programming-Library/USART.o
 
 .debug_macinfo
  *(.debug_macinfo)
 OUTPUT(Serial_Music.elf elf32-avr)
 LOAD linker stubs
 
-.debug_ranges   0x00000000      0x1d8
+.debug_ranges   0x00000000      0x208
  .debug_ranges  0x00000000       0x68 player.o
- .debug_ranges  0x00000068       0x18 test.o
- .debug_ranges  0x00000080      0x158 ../AVR-Programming-Library/USART.o
+ .debug_ranges  0x00000068       0x18 serial_organ.o
+ .debug_ranges  0x00000080      0x188 ../AVR-Programming-Library/USART.o
