@@ -9,7 +9,7 @@
  is used in the main AVR code titled 'serial_organ.c'.
                                                                    /
  File can be tweaked and modified based on user need.
- MAX_PITCH used in this scale is - 30000 and 8 OCTAVES, 
+ MAX_PITCH used in this scale is `20000` and 8 OCTAVES, 
  all can be modified for a more broader or short scale.
                                                                     /
  I used a funciton which reads F(x) = A*e^(-kx);
@@ -31,7 +31,7 @@ vector<string> noteCode = {"E", "C", "Cx", "Dx", "D", "F", "Ax",
  "B", "A", "Gx"};
 
 inline int calculatePitch(uint16_t maxSize){
-	const uint16_t MAX_PITCH = 25000;
+	const uint16_t MAX_PITCH = 20000;
 	const uint8_t OCTAVE = 8;
 
 	double temp = 0.5/OCTAVE;
