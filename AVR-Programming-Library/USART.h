@@ -34,7 +34,7 @@ void readString(char myString[], uint8_t maxLength);
 /* Define a string variable, pass it to this function
    The string will contain whatever you typed over serial */
 
-void printByte(uint8_t byte);
+void printByte(uint16_t byte);
                   /* Prints a byte out as its 3-digit ascii equivalent */
 void printWord(uint16_t word);
         /* Prints a word (16-bits) out as its 5-digit ascii equivalent */
