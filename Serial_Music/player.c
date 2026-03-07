@@ -48,7 +48,7 @@ void playNote(uint16_t period, uint16_t duration){
  This is a resting function, as the name says.
  */
 
-void sleep(uint16_t duration){
+void __sleep__(uint16_t duration){
 	do{
 		_delay_us(1);
 	}while(--duration);
