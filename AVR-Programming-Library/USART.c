@@ -79,9 +79,11 @@ void readString(char myString[], uint8_t maxLength) {
   myString[i] = 0;                          /* terminal NULL character */
 }
 
-void printByte(uint8_t byte) {
+void printByte(uint16_t byte) {
               /* Converts a byte to a string of decimal text, sends it */
-  transmitByte('0' + (byte / 100));                        /* Hundreds */
+  transmitByte('0' + (byte / 10000));                 /* Ten-thousands */ 
+  transmitByte('0' + ((byte / 1000) % 10));               /* Thousands */
+  transmitByte('0' + ((byte / 100) % 10));                 /* Hundreds */
   transmitByte('0' + ((byte / 10) % 10));                      /* Tens */
   transmitByte('0' + (byte % 10));                             /* Ones */
 }
