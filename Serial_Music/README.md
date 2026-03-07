@@ -80,4 +80,4 @@ Ensure you have the `avr-gcc` toolchain installed.
 
 ---
 
-## **Developed as part of a Mechatronics Engineering exploration into embedded audio systems.
+## **Developed as part of a Mechatronics Engineering exploration into embedded audio systems.**
