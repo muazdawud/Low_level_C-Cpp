@@ -11,7 +11,7 @@
 #define LED_ 0x3f
 
 static inline uint8_t checkState(void){
-	if(!(PIND & (1 << PD2)) == 1){
+	if(!(PIND & (1 << PD2))){
 		return (1);
 	}
 
