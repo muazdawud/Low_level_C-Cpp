@@ -4,7 +4,7 @@
 #include "pinDefines.h"
 
 #define T_DEL 500
-#define DURATION 1024
+#define DURATION 0xf000
 
 static inline void initADC(void){
 	ADMUX |= (1 << REFS0);
