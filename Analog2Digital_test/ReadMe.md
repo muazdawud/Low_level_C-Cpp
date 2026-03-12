@@ -40,7 +40,7 @@ Explores the impact of the **ADC Prescaler** on conversion speed and accuracy.
 
 ---
 
-## 🎛 Register Breakdown
+## Register Breakdown
 
 | Bit(s) | Functionality | Usage in this Project |
 | :--- | :--- | :--- |
@@ -52,7 +52,7 @@ Explores the impact of the **ADC Prescaler** on conversion speed and accuracy.
 
 ---
 
-## 🔌 Hardware Setup
+## Hardware Setup
 - **Microcontroller**: ATmega328P (Arduino Uno form factor).
 - **Inputs**: 
   - `10kOhms` Potentiometer on `PC3` (ADC3).
