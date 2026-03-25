@@ -3,7 +3,7 @@
 #include <util/delay.h>
 #include "USART.h"
 
-#define DEBOUNCE 10
+#define DEBOUNCE 30
 #define LED_DELAY 250
 
 volatile uint8_t check = 0;
