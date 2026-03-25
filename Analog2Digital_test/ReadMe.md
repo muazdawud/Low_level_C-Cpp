@@ -55,7 +55,7 @@ Explores the impact of the **ADC Prescaler** on conversion speed and accuracy.
 ## Hardware Setup
 - **Microcontroller**: ATmega328P (Arduino Uno form factor).
 - **Inputs**: 
-  - `10kOhms` Potentiometer on `PC3` (ADC3).
+  - `10kOhm` Potentiometer on `PC3` (ADC3).
   - Photoresistor (LDR) in a voltage divider circuit on `PC0` (ADC0).
 - **Outputs**: 
   - 6 LEDs with current-limiting resistors on `PB0-PB5`.
