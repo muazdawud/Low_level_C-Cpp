@@ -28,6 +28,7 @@ This program transforms a potentiometer input into a 6-stage LED "thermometer" d
   - **Auto-Triggering:** Continuously samples the input voltage without manual re-triggering.
 * **The Scaling Formula:**
   The 8-bit value from `ADCH` ($0$ to $255$) is mapped to the 6-LED array using:
+  
   $$\text{AdcInput} = \lfloor \frac{\text{input} \times 6}{256} \rfloor + 1$$
 
 ### LED Output States
