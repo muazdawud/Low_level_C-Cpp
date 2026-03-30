@@ -7,10 +7,9 @@
 
 #define DISCHARGE 50
 #define THRESHOLD 500
+#define TX_BUFFER 32
 
-volatile uint8_t i;
-volatile uint8_t bufSize;
-volatile uint8_t mainBuffer;
+volatile char mainBuffer[TX_BUFFER];
 volatile uint8_t txWritePtr, txReadPtr;
 
 volatile uint16_t charge_value;
@@ -21,7 +20,6 @@ ISR(PCINT1_vect){
         charge_value++;
 
         CAP_SENSOR_DDR |= (1 << CAP_SENSOR);
-        _delay_us(1);
 
         CAP_SENSOR_DDR &= ~(1 << CAP_SENSOR);
     }
@@ -31,40 +29,51 @@ ISR(PCINT1_vect){
 
 ISR(USART_UDRE_vect){
 	if(txWritePtr != txReadPtr){
-		UDR0 = mainBuffer;
 
-		txWritePtr = (txWritePtr + 1) % bufSize;
+		UDR0 = mainBuffer[txReadPtr];
+
+		txReadPtr = (txReadPtr + 1) % TX_BUFFER;
 
 	}else{
+
 		UCSR0B &= ~(1 << UDRIE0);
 	}
 	
 }
 
-void initPCI(void){
+inline void initPCI(void){
 	PCICR |= (1 << PCIE1);
 	PCMSK1 |= (1 << PCINT9);
 }
 
-void transferByte(uint8_t buffer){
-	mainBuffer = buffer;
+static inline void transferByte(char buffer){
+	uint8_t nextPtr = (txWritePtr + 1) % TX_BUFFER;
+    
+    while (nextPtr == txReadPtr); 
 
-	txWritePtr = (txWritePtr + 1) % bufSize;
+    mainBuffer[txWritePtr] = buffer;
+    txWritePtr = nextPtr;
 
 	UCSR0B |= (1 << UDRIE0);
 }
 
-void printWrd(uint16_t num){
-	do{
+static void printWrd(uint16_t num){
+	char buf[TX_BUFFER];
+	int8_t i = 0;
 
-	}while();
+	do{
+		buf[i++] = (num % 10) + '0';
+		num /= 10;
+	}while(num > 0);
+
+	while(i){
+		transferByte(buf[--i]);
+	}
 }
 
-void printStr(const char str[]){
-	bufSize = sizeof(str);
-
-	for(i = 0; i < bufSize; i++){
-		tranferByte(str[i]);
+static void printStr(const char str[]){
+	for(int8_t i = 0; str[i] != '\0'; i++){
+		transferByte(str[i]);
 	}
 }
 
