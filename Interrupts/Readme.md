@@ -13,6 +13,7 @@ The following pinout is used across both firmware versions:
 | **LED Array (6)** | `PB0` – `PB5` | Active-High Visual Output |
 | **Push Button** | `PD2` (INT0) | External Interrupt (Active-Low) |
 | **Potentiometer** | `PC3` (ADC3) | Analog Input |
+| **Touch Sensor** | `PC1` (PCINT9) | Capacitive Input (Touch Project) |
 | **USART TX** | `PD1` | Serial Communication (9600-115200 Baud) |
 
 ---
@@ -40,6 +41,21 @@ This program transforms a potentiometer input into a 6-stage LED "thermometer" d
 | 4 | `0x0f` | PB0–PB3 |
 | 5 | `0x1f` | PB0–PB4 |
 | 6 | `0x3F` | PB0–PB5 |
+
+---
+
+## Touch_Sensor: Capacitive Touch Sensor
+
+This implementation uses a single GPIO pin to act as a capacitive touch sensor, triggering the LED array when a finger is detected.
+
+### Functional Logic
+* **Pin Change Interrupt (PCI):** The system utilizes `PCINT9` (Port C, Pin 1). The `ISR(PCINT1_vect)` increments a `charge_value` every time the pin state toggles, effectively measuring the charge/discharge rate of the human body's capacitance. The `main` loop begins with a `clock_prescale_set()` finction which enables us to set the running speed of the MCU.
+* **Sensing Cycle:** 
+  1. The pin is pulsed HIGH to charge.
+  2. The pin is switched to an Input.
+  3. The system waits for a `DISCHARGE` period ($50\text{ms}$).
+  4. The ISR counts how many times the pin toggles state during that window.
+* **Threshold Detection:** If `charge_value` falls below the `THRESHOLD` ($500$), it indicates a change in capacitance (a touch), and all 6 LEDs on `PORTB` are illuminated.
 
 ---
 
