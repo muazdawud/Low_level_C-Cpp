@@ -5,14 +5,15 @@
 #include "USART.h"
 #include "pinDefines.h"
 
-#define DISCHARGE 50
-#define THRESHOLD 500
+#define DISCHARGE 25
+#define THRESHOLD 35
 #define TX_BUFFER 32
 
 volatile char mainBuffer[TX_BUFFER];
 volatile uint8_t txWritePtr, txReadPtr;
 
-volatile uint16_t charge_value;
+static volatile uint16_t filtered_value = 0;
+static volatile uint16_t charge_value;
 
 ISR(PCINT1_vect){
 
@@ -32,7 +33,7 @@ ISR(USART_UDRE_vect){
 
 		UDR0 = mainBuffer[txReadPtr];
 
-		txReadPtr = (txReadPtr + 1) % TX_BUFFER;
+		txReadPtr = (txReadPtr + 1) & (TX_BUFFER - 1);
 
 	}else{
 
@@ -47,7 +48,7 @@ inline void initPCI(void){
 }
 
 static inline void transferByte(char buffer){
-	uint8_t nextPtr = (txWritePtr + 1) % TX_BUFFER;
+	uint8_t nextPtr = (txWritePtr + 1) & (TX_BUFFER - 1);
     
     while (nextPtr == txReadPtr); 
 
@@ -85,7 +86,6 @@ int main(void){
 
 
 	LED_DDR |= 0x3f;
-	MCUCR |= (1 << PUD);
 	CAP_SENSOR_PORT |= (1 << CAP_SENSOR);
 	
 	printString("====[ TOUCH SENSOR ]====\r\n\r\n");
@@ -93,11 +93,16 @@ int main(void){
 	while(1){
 		charge_value = 0;
 
+		CAP_SENSOR_DDR |= (1 << CAP_SENSOR);
+		_delay_us(1);
+
 		CAP_SENSOR_DDR &= ~(1 << CAP_SENSOR);
 
 		sei();
 		_delay_ms(DISCHARGE);
 		cli();
+
+		filtered_value = (filtered_value * 3 + charge_value) / 4;
 
 		if(charge_value < THRESHOLD){
 			LED_PORT = 0x3f;
@@ -105,11 +110,8 @@ int main(void){
 			LED_PORT = 0x0;
 		}
 
-		printWrd(charge_value);
+		printWrd(filtered_value);
 		printStr("\r\n");
-
-
-        CAP_SENSOR_DDR |= (1 << CAP_SENSOR);
 	}
 
 	return 0;

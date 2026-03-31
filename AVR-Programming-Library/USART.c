@@ -77,58 +77,21 @@ void readString(char myString[], uint8_t maxLength) {
     }
   }
   myString[i] = 0;                          /* terminal NULL character */
-}
-
-// void printByte(uint16_t byte) {
-//   uint16_t temp;
-//               /* Converts a byte to a string of decimal text, sends it */
-
-//   while(byte){
-
-//     if(byte > 9999){
-//       temp = byte / 10000;
-//       transmitByte('0' + temp);               /* Ten-thousands */
-
-//       byte -= (temp*10000);
-//     }
-//     else if(byte > 999){
-//       temp = (byte / 1000) % 10;
-//       transmitByte('0' + temp);               /* Thousands */
-
-//       byte -= (temp*1000);
-//     }
-//     else if(byte > 99){
-//       temp = (byte / 100) % 10;
-//       transmitByte('0' + temp);               /* Hundreds */
-
-//       byte -= (temp*100);
-//     }
-//     else if(byte > 9){
-//       temp = (byte / 10) % 10;
-//       transmitByte('0' + temp);               /* Tens */
-
-//       byte -= (temp*10);
-//     }
-//     else if(byte > 0){
-//       temp = byte % 10;
-//       transmitByte('0' + temp);               /* Ones */
-
-//       byte -= temp;
-//     }else if(byte == 0){
-//       transmitByte('0' + byte);               /* Zero */
-//     }
-
-//   }
-
-// }
+} 
 
 void printByte(uint16_t byte) {
               /* Converts a byte to a string of decimal text, sends it */
-  // transmitByte('0' + (byte / 10000));                 /* Ten-thousands */
-  // transmitByte('0' + ((byte / 1000) % 10));               /* Thousands */
-  transmitByte('0' + ((byte / 100) % 10));                        /* Hundreds */
-  transmitByte('0' + ((byte / 10) % 10));                      /* Tens */
-  transmitByte('0' + (byte % 10));                             /* Ones */
+  char buf[TX_BUFFER];
+  int8_t i = 0;
+
+  do{
+    buf[i++] = (num % 10) + '0';
+    num /= 10;
+  }while(num > 0);
+
+  while(i){
+    transmitByte(buf[--i]);
+  }
 }
 
 void printWord(uint16_t word) {
