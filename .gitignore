@@ -6,7 +6,6 @@
 *.hex
 *.bin
 *.map
-*.lst
 
 # IDE/Project specific
 .vscode/
