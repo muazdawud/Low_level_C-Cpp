@@ -24,6 +24,7 @@
 #include <avr/io.h>
 #include "USART.h"
 #include <util/setbaud.h>
+#define TX_BUFFER 32
 
 void initUSART(void) {                                /* requires BAUD */
   UBRR0H = UBRRH_VALUE;                        /* defined in setbaud.h */
@@ -85,9 +86,9 @@ void printByte(uint16_t byte) {
   int8_t i = 0;
 
   do{
-    buf[i++] = (num % 10) + '0';
-    num /= 10;
-  }while(num > 0);
+    buf[i++] = (byte % 10) + '0';
+    byte /= 10;
+  }while(byte > 0);
 
   while(i){
     transmitByte(buf[--i]);
