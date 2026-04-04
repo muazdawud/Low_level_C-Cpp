@@ -13,8 +13,6 @@ ISR(TIMER1_COMPA_vect){
 static void setOCR1A(void){
 
 	OCR1A = 0x3D08;
-
-	sei();
 }
 
 static inline void initTimer1(void){
@@ -25,6 +23,7 @@ static inline void initTimer1(void){
 	TIMSK1 |= (1 << OCIE1A);
 	TCCR1B |= (1 << CS12) | (1 << CS10);
 	
+	sei();
 }
 
 int main(void){
