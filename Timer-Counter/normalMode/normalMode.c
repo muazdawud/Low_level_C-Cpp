@@ -1,3 +1,5 @@
+/// Inconclusive, not finished, gotta redefine it's purpose
+
 #include<avr/io.h>
 #include<avr/interrupt.h>
 #include<util/delay.h>
