@@ -1,23 +1,15 @@
 #include<avr/io.h>
-#include<util/delay.h>
-#include "USART.h"
+#include<util/delay.h> 
 
-int main(void){
-	uint16_t i;
+int main(void) {
 
-	initUSART();
+	// -------- Inits --------- //
+	DDRB |= (1 << PB5);
 
-	printString("Welcome Back!\r\n");
-	while(1){
+	while (1) {
 
-		for(i = 0; i < 65535; i++){
-			printByte(i);
-			printString("\r\n");
-		}
+	  PORTB |= (1 << PB5);                                      /* wait */
 
-		printString("END!\r\n");
-		break;
-	}
-
-	return 0;
+	}                                                  /* End event loop */
+	return 0;                            /* This line is never reached */
 }
