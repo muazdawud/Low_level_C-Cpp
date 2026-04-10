@@ -2,7 +2,7 @@
 
 	1. Make the ISR implimentation of every ISR required.
 		- ISR for both the buzzer and LED update.
-		- ISR for the 4-digit 7-segmant display.
+		- ISR for the 4-digit 7-segmant display.   (Done)
 		- ISR for the POT update.
 		- ISR for the DHT11 sensor update.
 		- ISR for USART.
@@ -37,12 +37,7 @@ ISR(TIMER1_COMPA_vect){
 
 	BUZZER_PORT ^= (1 << BUZZER);
 }
-
-ISR(TIMER0_COMPA_vect){
-	//Make a custom header for individual LED pins to turn on
-	//according to some small amount of interval.
-}
-
+ 
 ISR(ADC_vect){
 	//Read the ADC buffer
 }
