@@ -4,11 +4,14 @@
 #include<avr/io.h>
 #include<util/delay.h>
 #include<avr/interrupt.h>
+#include<avr/power.h>
 
 #include "USART_D.h"
 
 
 int main(void){
+
+    clock_prescale_set(clock_div_1);
 
     char ch = '#';
     int8_t age = 0x22;
@@ -31,8 +34,7 @@ int main(void){
         const char* input = USART_getString();
 
         USART_print("INPUT =  ");
-        USART_print(input);
-        USART_print("\r\n");
+        USART_print("%s.\r\n\n", input);
 
         USART_flush();
 
