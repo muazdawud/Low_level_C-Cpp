@@ -19,11 +19,15 @@
 #define TX_BUFFER 32
 #define RX_BUFFER 64
 
-volatile uint8_t txReadPtr = 0, txWritePtr = 0;
+
 volatile char tx_buf[TX_BUFFER];
-volatile char rx_buf[RX_BUFFER];
+volatile static char rx_buf[RX_BUFFER];
+
+volatile uint8_t txReadPtr = 0, txWritePtr = 0;
+
 volatile uint8_t rx_end_flag = 0;
 volatile uint8_t rxReadPtr = 0;
+volatile static uint8_t timeout_count = 0;
 
 
 
@@ -58,19 +62,29 @@ ISR(USART_RX_vect){
 
 		rx_buf[rxReadPtr] = UDR0;
 
-		if(rx_buf[rxReadPtr] == '\r' || rxReadPtr >= 63){
+		if(rx_buf[rxReadPtr] == '\r'){
 
-			rx_buf[rxReadPtr+1] = '\0';
-			rx_end_flag = 1;
 			UCSR0B &= ~(1 << RXCIE0);
 			TCCR2B = 0;
+			rx_buf[rxReadPtr+1] = '\0';
+			rx_end_flag = 1;
 		}
 
+		if(rxReadPtr >= (RX_BUFFER - 1)){
+			UCSR0B &= ~(1 << RXCIE0);
+			TCCR2B = 0;
+			rx_buf[rxReadPtr] = '\0';
+			rx_end_flag = 1;
+		}
+
+		transferByte(rx_buf[rxReadPtr]);
 		rxReadPtr = (rxReadPtr + 1) & (RX_BUFFER - 1);
+		timeout_count = 0;
 	}else{
 
 		UCSR0B &= ~(1 << RXCIE0);
 		TCCR2B = 0;
+		rx_buf[rxReadPtr] = '\0';
 	}
 }
 
@@ -78,10 +92,21 @@ ISR(USART_RX_vect){
 
 ISR(TIMER2_COMPA_vect){
 
-	rx_buf[RX_BUFFER] = '\0';
-	rx_end_flag = 1;
-	UCSR0B &= ~(1 << RXCIE0);
-	TCCR2B = 0;
+	timeout_count++;
+
+	if(timeout_count >= 150){
+
+		UCSR0B &= ~(1 << RXCIE0);
+		TCCR2B = 0;
+
+		if(rxReadPtr >= (RX_BUFFER - 1)){
+			rxReadPtr = 62;
+		}
+
+		rx_buf[rxReadPtr] = '\0';
+		rx_end_flag = 1;
+		timeout_count = 0;
+	}
 }
 
 
@@ -89,7 +114,7 @@ ISR(TIMER2_COMPA_vect){
 static inline void initTIMER_2(void) {
     #if defined(TCCR2A) && defined(TIMSK2)
     	// MODERN (ATmega328P, 168, 2560, etc.)
-        OCR2A = (uint8_t)((F_CPU / 1024) - 1);
+        OCR2A = 250;
 
 		TCCR2A |= (1 << WGM21);
 		TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
@@ -97,7 +122,7 @@ static inline void initTIMER_2(void) {
 		TIMSK2 |= (1 << OCIE2A);
     #elif defined(TCCR2) && defined(TIMSK)
 		// LEGACY (ATmega8, 16, 32,  etc.)
-        OCR2 = (uint8_t)((F_CPU / 1024) - 1);
+        OCR2 = ((F_CPU / 1024) - 1);
 
         TCCR2 |= (1 << WGM21);
 		TCCR2 |= (1 << CS22) | (1 << CS21) | (1 << CS20);
@@ -144,15 +169,21 @@ char USART_getByte(void){
 
 const char* USART_getString(void){
 
-	 initTIMER_2();
+	 rxReadPtr = 0;
+	 rx_buf[0] = '\0';
 
 	 UCSR0B |= (1 << RXCIE0);
-
+	 initTIMER_2();
+	 
 	 TCNT2 = 0;
+	 timeout_count = 0;
 	 sei();
 
 	 while(!rx_end_flag){};
 
+	 rx_end_flag = 0;
+	 //debug output
+	 USART_print("INPUT FROM HEADER = %s.\r\n", rx_buf);
 	 return rx_buf;
 }
 
