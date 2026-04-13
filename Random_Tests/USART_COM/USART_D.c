@@ -15,6 +15,7 @@
 #include <stdarg.h>
 
 #include "USART_D.h"
+#include "reg_defs.h"
 
 #define TX_BUFFER 32
 #define RX_BUFFER 64
@@ -23,13 +24,13 @@
 volatile char tx_buf[TX_BUFFER];
 volatile static char rx_buf[RX_BUFFER];
 
-volatile uint8_t txReadPtr = 0, txWritePtr = 0;
+volatile uint8_t txReadPtr = 0;
+volatile uint8_t txWritePtr = 0;
 
-volatile uint8_t rx_end_flag = 0;
-volatile uint8_t rxReadPtr = 0;
-volatile static uint8_t timeout_count = 0;
-
-
+volatile uint8_t rxReadPtr;
+volatile uint8_t rx_end_flag;
+volatile static uint8_t timeout_count;
+ 
 
 void USART_begin(void);
 char USART_receive(void);
@@ -38,181 +39,157 @@ static void printNumber(int16_t num);
 static inline void transferByte(char buffer);
 void USART_print(const char buffer[], ...);
 
-
-
+ 
 ISR(USART_UDRE_vect){
 	if(txWritePtr != txReadPtr){
 
-		UDR0 = tx_buf[txReadPtr];
+		_DATA_SFR_ = tx_buf[txReadPtr];
 
 		txReadPtr = (txReadPtr + 1) & (TX_BUFFER - 1);
 
 	}else{
 
-		UCSR0B &= ~(1 << UDRIE0);
-	}
-	
+		_UCSR_2_SFR &= ~(1 << _UDRIE_);
+	} 
 }
-
-
-
-ISR(USART_RX_vect){
+ 
+ISR(_RX_COMPLETE_){
 
 	if(!rx_end_flag){
 
-		rx_buf[rxReadPtr] = UDR0;
+		char data = _DATA_SFR_;
 
-		if(rx_buf[rxReadPtr] == '\r'){
+		if(data == '\r'){
 
-			UCSR0B &= ~(1 << RXCIE0);
-			TCCR2B = 0;
-			rx_buf[rxReadPtr+1] = '\0';
+			rx_end_flag = 1; 
+		}
+
+		else if(rxReadPtr >= (RX_BUFFER - 1)){
+			
 			rx_end_flag = 1;
 		}
 
-		if(rxReadPtr >= (RX_BUFFER - 1)){
-			UCSR0B &= ~(1 << RXCIE0);
-			TCCR2B = 0;
-			rx_buf[rxReadPtr] = '\0';
+		else if (data == '\b' || data == 127) { // Backspace or Delete
+		    
+		    if (rxReadPtr > 0) {
+
+		        rxReadPtr--;
+		    }
+		}
+ 	
+ 		else{
+ 			
+ 			rx_buf[rxReadPtr] = data;
+			rxReadPtr = (rxReadPtr + 1) & (RX_BUFFER - 1); 
+		}
+
+		timeout_count = 0; 
+	} 
+}
+
+ 
+ISR(_TIMER2_COMP_){
+
+	if(!rx_end_flag){
+
+		timeout_count++;
+	
+		if(timeout_count >= 150){
+
 			rx_end_flag = 1;
-		}
-
-		transferByte(rx_buf[rxReadPtr]);
-		rxReadPtr = (rxReadPtr + 1) & (RX_BUFFER - 1);
-		timeout_count = 0;
-	}else{
-
-		UCSR0B &= ~(1 << RXCIE0);
-		TCCR2B = 0;
-		rx_buf[rxReadPtr] = '\0';
+		} 
 	}
 }
 
-
-
-ISR(TIMER2_COMPA_vect){
-
-	timeout_count++;
-
-	if(timeout_count >= 150){
-
-		UCSR0B &= ~(1 << RXCIE0);
-		TCCR2B = 0;
-
-		if(rxReadPtr >= (RX_BUFFER - 1)){
-			rxReadPtr = 62;
-		}
-
-		rx_buf[rxReadPtr] = '\0';
-		rx_end_flag = 1;
-		timeout_count = 0;
-	}
-}
-
-
-
+ 
 static inline void initTIMER_2(void) {
-    #if defined(TCCR2A) && defined(TIMSK2)
-    	// MODERN (ATmega328P, 168, 2560, etc.)
-        OCR2A = 250;
 
-		TCCR2A |= (1 << WGM21);
-		TCCR2B |= (1 << CS22) | (1 << CS21) | (1 << CS20);
+    _OCR2_ = _OCR_VAL_;
 
-		TIMSK2 |= (1 << OCIE2A);
-    #elif defined(TCCR2) && defined(TIMSK)
-		// LEGACY (ATmega8, 16, 32,  etc.)
-        OCR2 = ((F_CPU / 1024) - 1);
+	_TCCR2_ |= (1 << WGM21);
+	_TCCR2B_ |= (1 << CS22) | (1 << CS21) | (1 << CS20);
 
-        TCCR2 |= (1 << WGM21);
-		TCCR2 |= (1 << CS22) | (1 << CS21) | (1 << CS20);
-
-		TIMSK |= (1 << OCIE2);
-    #else
-        #error "This MCU is not supported by the 4D_7S library yet!"
-    #endif
+	_TIMSK_ |= (1 << _OCIE_);
 }
 
-
-
+ 
 void USART_begin(void){
 
-	UBRR0H = UBRRH_VALUE;
-	UBRR0L = UBRRL_VALUE;
+	_UBRR_HIGH_ = UBRRH_VALUE;
+	_UBRR_LOW_ = UBRRL_VALUE;
 
 	#if USE_2X
-	UCSR0A |= (1 << U2X0);
+	_UCSR_1_SFR |= (1 << _U2X_);
 	#else
-	UCSR0A &= ~(1 << U2X0);
+	_UCSR_1_SFR &= ~(1 << _U2X_);
 	#endif
 
-	UCSR0B |= (1 << TXEN0) | (1 << RXEN0);
-	UCSR0C |= (1 << UCSZ01) | (1 << UCSZ00);
+	_UCSR_2_SFR |= (1 << _TXE_) | (1 << _RXE_);
+	_UCSR_3_SFR |= (1 << _UCSZ1_) | (1 << _UCSZ0_);
 	
 	sei();
 }
-
-
+ 
 
 char USART_getByte(void){
 
-	loop_until_bit_is_set(UCSR0A, RXC0);
+	loop_until_bit_is_set(_UCSR_1_SFR, _RXC_);
 
-	char receivedByte = UDR0;
+	char receivedByte = _DATA_SFR_;
 
 	transferByte(receivedByte);
 
 	return receivedByte;
 }
 
+ 
+const char* USART_getString(void){ 
 
+	USART_flush();
 
-const char* USART_getString(void){
+	rx_end_flag = 0;
+	rxReadPtr = 0;
+	rx_buf[0] = '\0'; 
+	timeout_count = 0;
+	TCNT2 = 0;
 
-	 rxReadPtr = 0;
-	 rx_buf[0] = '\0';
+	_UCSR_2_SFR |= (1 << _RXCI_);
+	initTIMER_2();
 
-	 UCSR0B |= (1 << RXCIE0);
-	 initTIMER_2();
-	 
-	 TCNT2 = 0;
-	 timeout_count = 0;
-	 sei();
+	while(!rx_end_flag){};
 
-	 while(!rx_end_flag){};
+	_UCSR_2_SFR &= ~(1 << _RXCI_);
+	_TCCR2B_ = 0;
+	rx_buf[rxReadPtr] = '\0';
 
-	 rx_end_flag = 0;
-	 //debug output
-	 USART_print("INPUT FROM HEADER = %s.\r\n", rx_buf);
-	 return rx_buf;
+	//debug output
+	// USART_print("INPUT FROM HEADER = %s.\r\n", rx_buf);
+	return (const char*)rx_buf;
 }
 
-
-
+ 
 void USART_flush(void){
 
 	unsigned char dummy;
 
-	while(bit_is_set(UCSR0A, RXC0)){
-		dummy = UDR0;
+	while(bit_is_set(_UCSR_1_SFR, _RXC_)){
+		dummy = _DATA_SFR_;
 	}
 }
 
-
-
+ 
 static inline void transferByte(char buffer){
 
 	uint8_t nextPtr = (txWritePtr + 1) & (TX_BUFFER - 1);
     
-    while (nextPtr == txReadPtr);
+    while(nextPtr == txReadPtr){};
 
     tx_buf[txWritePtr] = buffer;
     txWritePtr = nextPtr;
 
-	UCSR0B |= (1 << UDRIE0);
+	_UCSR_2_SFR |= (1 << _UDRIE_);
 }
-
-
+ 
 
 static void printNumber(int16_t num){
 
@@ -233,9 +210,8 @@ static void printNumber(int16_t num){
 		transferByte(buf[--i]);
 	}
 }
-	
 
-
+ 
 void USART_print(const char buffer[], ...){
 
 	va_list bytes;
