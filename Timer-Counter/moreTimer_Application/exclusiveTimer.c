@@ -4,8 +4,8 @@
 		- ISR for both the buzzer and LED update.
 		- ISR for the 4-digit 7-segmant display.   (Done)
 		- ISR for the POT update.
-		- ISR for the DHT11 sensor update.
-		- ISR for USART.
+		- ISR for the DHT11 sensor update.         (Next)
+		- ISR for USART.                           (Done)
 	2. Make an implimentation of your custom USART library.
 	3. Make a custom DHT11 sensor module library (read it's datasheet).
 	4. Don't forget, the time is coming throug USART from ESP8266
