@@ -10,13 +10,8 @@
 
 
 ISR(PCINT1_vect){
-	if(bit_is_set(PINC, P0)){
-
-		DHT_HandleSignal();
-	}else{
-
-		DHT_ReadSignal();
-	}
+ 
+	DHT_HandleSignal();
 }
 
 
@@ -29,9 +24,8 @@ int main(void){
 
 	while(1){
 
-		uint8_t temp = DHT_Get_Temp();
-		_delay_ms(1000);
-		uint8_t humd = DHT_Get_Humidity();
+		uint8_t temp = DHT_Get_Temp(); 
+		uint8_t humd = DHT_Get_Humidity(); 
 
 		USART_print("\r\n");
 		USART_print("Current Temperature ->  %d\r\n", temp);
