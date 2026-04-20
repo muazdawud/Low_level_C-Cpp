@@ -36,8 +36,8 @@
 #define 	MCU_BD_LOW     20 /*
 			 ~18ms, BD stands for Begin Delay.
 			 */
-#define 	MCU_BD_HIGH    40 /*
-			 ~40us, if susseccful, the DHT will make the next delay.
+#define 	MCU_BD_HIGH    30 /*
+			 ~30us, if susseccful, the DHT will make the next delay.
 			 */
 #define 	DHT_OD 		   80 /*
 			 ~80us for both the LOW and HIGH signals, LOW first then HIGH
@@ -62,7 +62,7 @@
 			 ~70*2us to transmit a '1' bit thorugh the data line 
 			 (with `F_CPU/8` prescaler).
 			 */
-#define 	DHT_READ_DELAY	25 /*
+#define 	DHT_READ_DELAY	35 /*
 			 This (in ms) is the entire time it takes the DHT to sample
 			 all the data beginning from the StartSignal to the end.
 			 */
@@ -70,20 +70,11 @@
 #define 	_OCR_VAL_		((F_CPU / 1024) - 1)
 
 
-typedef struct {
-    volatile uint8_t* port;
-    volatile uint8_t* ddr;
-    volatile uint8_t* pin;
-    uint8_t bit;
-} DHT_Device;
-
-
+	
 
 void DHT_Init(uint8_t portValue, uint8_t PIN);
 
-void DHT_HandleSignal(void);
-
-void DHT_ReadSignal(void);
+void DHT_HandleSignal(void); 
 
 uint8_t DHT_Get_Temp(void);
 
