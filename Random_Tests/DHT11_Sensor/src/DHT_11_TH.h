@@ -36,7 +36,7 @@
 #define 	MCU_BD_LOW     20 /*
 			 ~18ms, BD stands for Begin Delay.
 			 */
-#define 	MCU_BD_HIGH    30 /*
+#define 	MCU_BD_HIGH    20 /*
 			 ~30us, if susseccful, the DHT will make the next delay.
 			 */
 #define 	DHT_OD 		   80 /*

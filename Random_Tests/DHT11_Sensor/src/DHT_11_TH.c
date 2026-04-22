@@ -11,6 +11,7 @@
 
 #include "DHT_11_TH.h"
 #include "reg_defs_t.h"
+#include "USART_D.h"
  
 
 typedef struct {
@@ -34,6 +35,7 @@ volatile static uint8_t temp_t = 0;
 volatile static uint8_t temp_h = 0;
 volatile static uint8_t temp_t_d = 0;
 volatile static uint8_t temp_h_d = 0;
+uint8_t temp_SREG;
 
 
 volatile static uint8_t timerGuard = 0;
@@ -52,6 +54,7 @@ static void DHT_StartSignal(void);
 static void DHT_Parse_Data(void); 
 static inline uint8_t DHT_Verify_Checksum(void);
 static inline void initTIMER_1(void);
+static inline void DHT_end(void);
 
 
 void DHT_Init(uint8_t portValue, uint8_t PIN);
@@ -61,19 +64,22 @@ uint8_t DHT_Get_Humidity(void);
 
 
 
-// ISR(_TIMER1_OVF_){
+ISR(_TIMER1_OVF_){
 
-// 	timerGuard++;
+	timerGuard++;
 
-// 	if(timerGuard >= 120){
-// 		timerGuard = 0;
-// 		_TCR1B_ = 0;
-// 	}
-// }
+	if(timerGuard >= 90){
+		timerGuard = 0;
+		_TCR1B_ = 0;
+	}
+}
 
 
 
 static void DHT_StartSignal(void) {
+
+	temp_SREG = SREG;
+	cli();
 
 	_TCR1B_ = 0;
 	TCNT1 = 0;
@@ -119,12 +125,12 @@ static void DHT_Parse_Data(void){
 
 		temp_deci = (temp_nd_hum_data);
 
-		// if(!DHT_Verify_Checksum()){
-		// 	humidity = temp_h;
-		// 	hum_deci = temp_h_d;
-		// 	temperature = temp_t;
-		// 	temp_deci = temp_t_d;
-		// }
+		if(!DHT_Verify_Checksum()){
+			temperature = temp_t;
+			temp_deci = temp_t_d;
+			humidity = temp_h;
+			hum_deci = temp_h_d;
+		}
 	}
 
 	SREG = temp;
@@ -147,7 +153,15 @@ static inline void initTIMER_1(void){
 
 	_TCR1B_ &= ~(1 << _WGM12_) & ~(1 << _WGM13_);
 	_TCR1A_ &= ~(1 << _WGM10_) & ~(1 << _WGM11_);
-	// _TIMSK1_ |= (1 << _TOIE1_);
+	
+}
+
+
+static inline void DHT_end(void){
+	DHT_Parse_Data(); 
+
+	SREG = temp_SREG;
+	_TIMSK1_ |= (1 << _TOIE1_);
 }
 
 
@@ -226,16 +240,13 @@ void DHT_HandleSignal(void){
 
 uint8_t DHT_Get_Temp(void){
 
-	// if(timerGuard){
-	// 	return temperature;
-	// }
+	if(timerGuard){
+		return temperature;
+	}
 
 	DHT_StartSignal();
 	_delay_ms(DHT_READ_DELAY - MCU_BD_LOW);
-
-	DHT_Parse_Data();
-
-	//cli();
+	DHT_end();
 
 	return temperature;
 }
@@ -243,16 +254,13 @@ uint8_t DHT_Get_Temp(void){
 
 uint8_t DHT_Get_Humidity(void){
 
-	// if(timerGuard){
-	// 	return humidity;
-	// }
+	if(timerGuard){
+		return humidity;
+	}
 
 	DHT_StartSignal();
 	_delay_ms(DHT_READ_DELAY - MCU_BD_LOW);
-
-	DHT_Parse_Data();
-
-	//cli();
+	DHT_end();
 
 	return humidity;
 }
