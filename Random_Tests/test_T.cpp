@@ -28,7 +28,7 @@ int main(void){
 	if(!file) return 1;
 
 	for(int i = 0; i < 5; i++){
-		file << endl;
+		file << "\n";
 	}
 
 	file << "#ifndef _REG_DEFS_T_H" << endl;
