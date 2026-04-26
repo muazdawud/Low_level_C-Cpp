@@ -1,13 +1,17 @@
+/*
+	Project Migrated to ../../Digital Watch folder
+	*/
+
 /*  NOTES;
 
 	1. Make the ISR implimentation of every ISR required.
 		- ISR for both the buzzer and LED update.
 		- ISR for the 4-digit 7-segmant display.   (Done)
 		- ISR for the POT update.
-		- ISR for the DHT11 sensor update.         (Next)
+		- ISR for the DHT11 sensor update.         (Done)
 		- ISR for USART.                           (Done)
-	2. Make an implimentation of your custom USART library.
-	3. Make a custom DHT11 sensor module library (read it's datasheet).
+	2. Make an implimentation of your custom USART library.    (Done)
+	3. Make a custom DHT11 sensor module library (read it's datasheet).       (Done)
 	4. Don't forget, the time is coming throug USART from ESP8266
 	   which will be calling an NTP server for the time and sending
 	   it, the recieval will be through ISR for the Atmega.
