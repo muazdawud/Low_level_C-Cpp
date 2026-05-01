@@ -18,7 +18,7 @@
 #include <stdarg.h>
 
 #include "USART_D.h"
-#include "reg_defs_t.h"
+#include "../reg_defs_t.h"
 
 #define TX_BUFFER 32
 #define RX_BUFFER 64
