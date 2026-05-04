@@ -85,7 +85,7 @@ int main(void){
 	initUSART();
 
 
-	LED_DDR |= 0x3f;
+	LED_DDR |= 0b11111100;
 	CAP_SENSOR_PORT |= (1 << CAP_SENSOR);
 	
 	printString("====[ TOUCH SENSOR ]====\r\n\r\n");
@@ -105,7 +105,7 @@ int main(void){
 		filtered_value = (filtered_value * 3 + charge_value) / 4;
 
 		if(charge_value < THRESHOLD){
-			LED_PORT = 0x3f;
+			LED_PORT = 0b11111100;
 		}else{
 			LED_PORT = 0x0;
 		}
