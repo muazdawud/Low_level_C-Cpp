@@ -7,9 +7,9 @@
 //   Pin Defines
 // ---------------
 
-#define LED_PORT                PORTB
+#define LED_PORT                PORTD
 #define LED_PIN                 PINB
-#define LED_DDR                 DDRB
+#define LED_DDR                 DDRD
 
 #define LED0                    PB0
 #define LED1                    PB1
