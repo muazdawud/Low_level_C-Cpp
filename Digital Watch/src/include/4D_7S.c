@@ -35,9 +35,15 @@ static uint8_t GROUND_ARRAY[GROUND_SIZE];
 
 static uint8_t DPF[GROUND_SIZE] = {0, 0, 0, 0};
 
+static uint8_t temp_DPF[GROUND_SIZE] = {0, 0, 0, 0};
+
 static volatile uint16_t second_timing = 0;
 
 static volatile uint8_t dp_check = 0;
+
+static uint8_t dp_disable = 0;
+
+static uint8_t temp_dp = 0;
 
 static uint16_t compare_val = 0;
 
@@ -92,7 +98,6 @@ static inline void initTIMER_2(void) {
         _OCR2A_ = (uint8_t)((0.002 * F_CPU) / 1024 - 1);
 
 		_TCR2A_ |= (1 << _WGM21_);
-		_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 
 		compare_val = ((F_CPU / 1024UL) / _OCR2A_);
 
@@ -111,11 +116,11 @@ static void extractNumber(uint16_t number) {
         number /= 10;
     }
 
-    cli();
+    // cli();
     for (uint8_t k = 0; k < 4; k++) {
         numberArray[k] = NUMBER_BYTES[_tmp_[k]];
     }
-    sei();
+    
 }
 
 
@@ -153,6 +158,8 @@ void DISPLAY(uint16_t num){
 
 	extractNumber(num);
 
+	// sei();
+	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
 }
 
@@ -162,16 +169,69 @@ void DISPLAY(uint16_t num){
 	This isn't and would not be made to be generic, it is fully custom and
 	made for the need of showing characters
 
-	==========||> [-CUSTOM BUILD-] <||==========
+	==========||> [-CUSTOM FUNCTION BUILD-] <||==========
 */
 void DISPLAY_wChar(uint16_t character, uint8_t number){
     
     extractNumber(number);
 
-    cli();
     numberArray[0] = (character >> 8);
     numberArray[1] = (character);
-    sei();
 
+    for(uint8_t i = 0; i < GROUND_SIZE; i++){
+		temp_DPF[i] = DPF[i];
+		DPF[i] = 0;
+	}
+
+	dp_disable = 255;
+
+	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
+}
+
+void DISPLAY_nDP(uint16_t num, uint8_t disable_dp){
+
+	extractNumber(num);
+
+
+	if((disable_dp-1) < 255){
+		temp_dp = DPF[disable_dp-1];
+		DPF[disable_dp-1] = 0;
+		dp_disable = disable_dp-1;
+	}
+
+	if((disable_dp-1) == 255){
+
+		for(uint8_t i = 0; i < GROUND_SIZE; i++){
+			temp_DPF[i] = DPF[i];
+			DPF[i] = 0;
+		}
+
+		dp_disable = disable_dp-1;
+	}
+
+
+	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
+	TCNT2 = 0x1E;
+}
+
+void DISPLAY_reset(){
+
+	groundCount = 0;
+	pattern = 0;
+	second_timing = 0;
+	dp_check = 0;
+
+	if(dp_disable < 255){
+		DPF[dp_disable] = temp_dp;
+	}
+
+	if(dp_disable == 255){
+
+		for(uint8_t i = 0; i < GROUND_SIZE; i++){
+			DPF[i] = temp_DPF[i];
+		}
+	}
+
+	_TCR2B_ &= ~(1 << _CS22_) & ~(1 << _CS21_) & ~(1 << _CS20_);
 }
