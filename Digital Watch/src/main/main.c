@@ -14,24 +14,41 @@
 #include "config.h"
 
 
-#define 	DEBOUNCE_DELAY 	2
-#define 	OPR_SECTION    	3 /* Entire Operation Sections */ 
+#define 	DEBOUNCE_DELAY 	1500
+#define 	OPR_SECTION    	4 /* 
+					Entire Operation Section <Including time[1],
+					temperature[2], humidity[3] and date[4]>.
+					*/ 
+#define 	SETUP_SECTION	5 /* 
+					Entire Setup Section <Including hour[1],
+					minute[2], day[3], month[4] and year[5]>.
+					*/ 
 
 
+
+volatile static uint8_t setup_flag = 0;
 
 volatile static uint8_t hour = 7;
 volatile static uint8_t minute = 54; 
 volatile static uint8_t seconds = 0;
+volatile static uint8_t day = 7;
+volatile static uint8_t month = 5;
 
 volatile static uint8_t button_state = 0;
 volatile static uint8_t button_click = 0;
+
+volatile static uint8_t button_flag = 0;
+volatile static uint8_t isr_flag = 0;
+
 volatile static uint8_t power_on = 0;
 volatile static uint8_t ovf_counter = 0;
 
 static uint8_t temp_ = 0;
 static uint8_t humd_ = 0;
+volatile static uint8_t update_tnh = 0;
 
 volatile static uint16_t display_number = 0;
+volatile static uint8_t display_check = 0;
 
 
 uint8_t _4D_7S_Ground[] = {LED_GP1, LED_GP2, LED_GP3, LED_GP4};
@@ -39,9 +56,9 @@ uint8_t _4D_7S_Ground[] = {LED_GP1, LED_GP2, LED_GP3, LED_GP4};
 
 static inline void initTimer0(void);
 static inline void init4D_7S(void);
-// static void mainRun(void);
 static inline void endRun(void);
 
+static void setupWatch(void);
 
 
 /* ISR (On PORTB) From the DHT_11.h setup */
@@ -51,16 +68,16 @@ ISR(PCINT0_vect){
 }
 
 
-/* Push Button Interrupt */
-ISR(PCINT1_vect){
+// /* Push Button Interrupt */
+// ISR(PCINT1_vect){
 
-	button_state = 1;
-}
+// 	button_state = 1;
+// }
 
 
 /* ISR for updating the Time and date */
 ISR(_TIMER0_COMPA_){
-	ovf_counter = ((F_CPU / 1024UL) / _OCR2A_);
+	ovf_counter = (ovf_counter + 1) % (F_OVERFLOW);
 
 	if(!(ovf_counter)){
 		seconds = (seconds + 1) % 60;
@@ -76,12 +93,29 @@ ISR(_TIMER0_COMPA_){
 					hour = 12;
 				}
 
-				temp_ = DHT_Get_Temp();
-				humd_ = DHT_Get_Humidity();
+				update_tnh = 1;
 			}
 		}
+	}
 
-		display_number = (hour*100) + (minute);
+	if(bit_is_clear(PB_PIN, PUSH_BUTTON)){
+
+		isr_flag = (isr_flag + 1) % (OPR_SECTION + SETUP_SECTION);
+	}
+
+	if(isr_flag < OPR_SECTION){
+
+		if(bit_is_set(PB_PIN, PUSH_BUTTON)){
+			button_flag = 1;
+			setup_flag = 0;
+		}
+	}
+	else if(isr_flag < SETUP_SECTION){
+
+		if(bit_is_set(PB_PIN, PUSH_BUTTON)){
+			setup_flag = 1;
+			button_flag = 0;
+		}
 	}
 }
 
@@ -89,11 +123,7 @@ ISR(_TIMER0_COMPA_){
 
 int main(void){
 
-	// PB_DDR &= ~(1 << PUSH_BUTTON);
-	// PB_PORT |= (1 << PUSH_BUTTON);
-
-	PCICR |= (1 << PCIE1);
-	PCMSK1 |= (1 << PUSH_BUTTON);
+	initTimer0();
 
 	/* 4D_7S Display Setup */
 	initLED_DISPLAY(&LED_LIVE_PORT, &LED_GROUND_PORT, 2); /* Decimal Point on 2nd Number */
@@ -102,49 +132,62 @@ int main(void){
 	/* DHT_11 Setup */
 	DHT_Init(DHT_PORT, DHT_PIN);
 
-	initTimer0();
-
 	temp_ = DHT_Get_Temp();
 	humd_ = DHT_Get_Humidity();
-	display_number = (hour*100) + (minute);
+
+	PB_DDR &= ~(1 << PUSH_BUTTON);
+	PB_PORT |= (1 << PUSH_BUTTON);
 
 	while(1){
 
+		if(button_flag){
+			button_flag = 0;
+			power_on = 1;
+			button_state = 1;
+		}
+
+		if(setup_flag){
+
+			setupWatch();
+		}
+
 		if(button_state){
 
+			DISPLAY_reset();
+
+			switch(button_click){
+				case 0:{
+					display_number = (hour*100) + (minute);
+					DISPLAY(display_number);
+					break;
+				}
+				case 1:{
+					DISPLAY_wChar(0x7840, temp_);
+					break;
+				}
+				case 2:{
+					DISPLAY_wChar(0x7440, humd_);
+					break;
+				}
+				case 3:{
+					display_number = (day*100) + (month);
+					DISPLAY_nDP(display_number, 2);
+				}
+			}
+
+			init4D_7S();
+
+			button_click = (button_click + 1) % (OPR_SECTION);
+
 			button_state = 0;
+		}
 
-			if(bit_is_clear(PB_PIN, PUSH_BUTTON)){
-				// cli();
-				// _delay_ms(DEBOUNCE_DELAY);
-				// sei();
-				if(bit_is_clear(PB_PIN, PUSH_BUTTON)){
-					power_on = 1;
-				}
-			}
+		if(update_tnh){
 
-			if(power_on == 1){
+			temp_ = DHT_Get_Temp();
+			humd_ = DHT_Get_Humidity();
 
-				init4D_7S();
-
-				switch(button_click){
-					case 0:{
-						DISPLAY(display_number);
-						break;
-					}
-					case 1:{
-						DISPLAY_wChar(0x7840, temp_);
-						break;
-
-					}
-					case 2:{
-						DISPLAY_wChar(0x7440, humd_);
-						break;
-					}
-				}
-
-				button_click = (button_click + 1) % (OPR_SECTION);
-			}
+			update_tnh = 0;
 		}
 
 		if(!power_on){
@@ -178,27 +221,24 @@ static inline void init4D_7S(void){
 }
 
 
-// static void mainRun(void){
-
-// 	if(power_on == 1){
-
-		
-// 	}
-
-// 	if(power_on){
-// 		mainRun();
-// 	}
-
-// 	endRun();
-// }
-
-
 static inline void endRun(void){
 
 	LED_LIVE_DDR &= ~(0xff);
 	LED_GROUND_DDR &= ~(0xf);
 
+	setup_flag = 0;
+
 	power_on = 0;
 	button_click = 0;
 	button_state = 0;
+	button_flag = 0;
+	isr_flag = 0;
+}
+
+
+static void setupWatch(void){
+
+	while(power_on){
+
+	}
 }
