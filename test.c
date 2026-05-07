@@ -4,153 +4,43 @@
 
 #include "USART.h"
 
-volatile uint8_t count = 0;
-volatile uint8_t val = 0;
+volatile static uint16_t click = 0;
+volatile static uint8_t button = 0;
 
-volatile static uint8_t temperature, humidity;
-volatile static uint32_t temp_nd_hum_data;
-volatile static uint16_t timeStamp;
-volatile static uint8_t bit_position;
-volatile static uint8_t innerCount;
-volatile static uint16_t temp;
-volatile static uint8_t checksum;
 
 ISR(PCINT1_vect){
 
-	if(count > 2){
-		innerCount++;
-
-		if(bit_is_set(PINC, PC0)){
-			timeStamp = TCNT1;
-		}else{
-
-			temp = TCNT1 - timeStamp;
-
-			uint8_t bit = (temp > 50) ? 1 : 0;
-
-			if(bit_position < 32){
-
-				temp_nd_hum_data = (temp_nd_hum_data << 1) | bit;
-			}else if(bit_position < 40){
-
-				checksum = (checksum << 1) | bit;
-			}
-
-			bit_position++;
-		}
-	}
-
-	count++;
+	click++;
+	button = 1;
 }
 
-inline static void startPCINT(void){
 
-	cli();
+int main(void){
 
-	temperature = 0;
-	humidity = 0;
-	temp_nd_hum_data = 0;
-	count = 0;
-	checksum = 0;
+	DDRC &= ~(1 << PC1);
+	PORTC |= (1 << PC1);
 
-	TCNT1 = 0;
-	timeStamp = 0;
-	bit_position = 0;
-	innerCount = 0;
-	temp = 0;
-
-
-	DDRC |= (1 << PC0);
-	PORTC &= ~(1 << PC0);
-	_delay_ms(28);
-
-	PORTC |= (1 << PC0);
-	_delay_us(25);
-	DDRC &= ~(1 << PC0);
-
-	TCCR1B |= (1 << CS11);
-
-	sei();
-}
-
-static void parseInfo(){
-	cli();
-
-	humidity = (temp_nd_hum_data >> 24);
-	temperature = (temp_nd_hum_data >> 8);
-
-	sei();
-}
-
-static void isrState(){
-
-	parseInfo();
-
-	printString("DHT responded : ");
-	printByte(count);
-	printString(" times.\r\n");
-
-	printString("	TIMESTAMP = ");
-	printByte(timeStamp);
-	printString("\r\n");
-
-	printString("	INNER_COUNT = ");
-	printByte(innerCount);
-	printString("\r\n");
-
-	printString("	BIT_POSITION = ");
-	printByte(bit_position);
-	printString("\r\n");
-
-	printString("	Main Data Stream = ");
-	printByte(temp_nd_hum_data);
-	printString("\r\n");
-
-	printString("	Check Sum = ");
-	printByte(checksum);
-	printString("\r\n");
-
-	printString("	Temperature = ");
-	printByte(temperature);
-	printString("\r\n");
-
-	printString("	Humidity = ");
-	printByte(humidity);
-	printString("\r\n");
-}
-
-int main(void) {
-
-	// -------- Inits --------- //
+	PCICR |= (1 << PCIE1);
+	PCMSK1 |= (1 << PC1);
 
 	initUSART();
 
-	printString("\r\n===== PCINT TEST =====\r\n");
-
-	PCICR |= (1 << PCIE1);
-	PCMSK1 |= (1 << PCINT8);
-
-	DDRC &= ~(1 << PC0);
-
-	_delay_ms(2000);
-
 	sei();
 
-	while (1) {
+	printString("\r\n=====PCINT TEST=====\r\n");
 
-		cli();
+	while(1){
 
-		printString("\r\nInside while()\r\n");
-		sei();
+		if(button){
+			button = 0;
+			_delay_us(1500);
+			if(bit_is_clear(PINC, PC1)){
+				printByte(click);
+				printString("\r\n");
+				click = 0;
+			}
+		}
+	}
 
-		                                  /* wait */
-
-		startPCINT();
-
-		_delay_ms(3000);
-
-		isrState();
-	}                                 
-	                 /* End event loop */
-	return 0;                            /* This line is never reached */
+	return 0;
 }
