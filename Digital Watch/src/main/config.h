@@ -14,6 +14,8 @@
 			The number of times/frequency of the TIMER0 overflow
 			in a single second
 			*/
+#define 	HOUR_OVF		12
 
+#define 	MINUTE_OVF		60
 
 #endif /* _CONFIG_H_ */
