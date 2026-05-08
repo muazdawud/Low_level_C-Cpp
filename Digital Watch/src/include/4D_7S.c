@@ -41,11 +41,13 @@ static volatile uint16_t second_timing = 0;
 
 static volatile uint8_t dp_check = 0;
 
-static uint8_t dp_disable = 0;
-
-static uint8_t temp_dp = 0;
-
 static uint16_t compare_val = 0;
+
+static uint16_t mid_cycle_compare = 0;
+
+static uint8_t Flick_Array[GROUND_SIZE] = {0, 0, 0, 0};
+
+static uint8_t Flick_Flag = 0;
 
 
 // THIS IS THE ARRAY WITHOUT DECIMAL POINTS
@@ -65,10 +67,10 @@ static const uint8_t NUMBER_BYTES[10] = {
 
 ISR(_TIMER2_COMPA_) {
 
-    second_timing = (second_timing + 1) % (compare_val/2);
-
-    if(!second_timing){
-    	dp_check ^= (1); 
+    if((++second_timing) >= mid_cycle_compare){
+    	second_timing = 0;
+    	dp_check ^= (1);
+    	Flick_Flag ^= (1);
     }
 
 	for (uint8_t i = 0; i < 4; i++) {
@@ -82,11 +84,25 @@ ISR(_TIMER2_COMPA_) {
     	pattern |= 0x80;
     }
 
-    *LED_DISPLAY_PORT = pattern; 	
+    if(Flick_Array[groundCount] && !Flick_Flag){
+
+    	// if(Flick_Flag){
+    	// 	*LED_DISPLAY_PORT = pattern;
+    	// }else{
+    	// 	*LED_DISPLAY_PORT = 0;
+    	// }
+
+    	*LED_DISPLAY_PORT = 0;
+    }else{
+
+    	*LED_DISPLAY_PORT = pattern;
+    }
 
 	*LED_DISPLAY_GROUND &= ~(1 << GROUND_ARRAY[groundCount]);
 
-	groundCount = (groundCount + 1) % 4;
+	if(++groundCount > 3){
+		groundCount = 0;
+	}
 }
 
 
@@ -99,7 +115,8 @@ static inline void initTIMER_2(void) {
 
 		_TCR2A_ |= (1 << _WGM21_);
 
-		compare_val = ((F_CPU / 1024UL) / _OCR2A_);
+		compare_val = ((F_CPU / 1024UL) / (_OCR2A_ + 1));
+		mid_cycle_compare = (compare_val / 2);
 
 		_TIMSK2_ |= (1 << _OCIE2A_);
 }
@@ -109,18 +126,13 @@ static void extractNumber(uint16_t number) {
 
 	dp_check = 1;
 
-    uint8_t _tmp_[4];
-    
-    for (int8_t i = 3; i >= 0; i--) {
-        _tmp_[i] = number % 10;
-        number /= 10;
-    }
+    for(uint8_t i = 3; i < 255; i--){
+    	uint8_t digit = number % 10;
 
-    // cli();
-    for (uint8_t k = 0; k < 4; k++) {
-        numberArray[k] = NUMBER_BYTES[_tmp_[k]];
+    	numberArray[i] = NUMBER_BYTES[digit];
+
+    	number /= 10;
     }
-    
 }
 
 
@@ -156,9 +168,10 @@ void initLED_DISPLAY(volatile uint8_t *PORT_1, volatile uint8_t *PORT_2, uint8_t
 
 void DISPLAY(uint16_t num){
 
+	DISPLAY_reset();
+
 	extractNumber(num);
 
-	// sei();
 	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
 }
@@ -171,45 +184,62 @@ void DISPLAY(uint16_t num){
 
 	==========||> [-CUSTOM FUNCTION BUILD-] <||==========
 */
+
+static void disable_decimal(){
+
+	for(uint8_t i = 0; i < GROUND_SIZE; i++){
+		temp_DPF[i] = DPF[i];
+		DPF[i] = 0;
+	}
+}
+
 void DISPLAY_wChar(uint16_t character, uint8_t number){
+
+	DISPLAY_reset();
     
     extractNumber(number);
 
     numberArray[0] = (character >> 8);
     numberArray[1] = (character);
 
-    for(uint8_t i = 0; i < GROUND_SIZE; i++){
-		temp_DPF[i] = DPF[i];
-		DPF[i] = 0;
-	}
-
-	dp_disable = 255;
+    disable_decimal();
 
 	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
 }
 
-void DISPLAY_nDP(uint16_t num, uint8_t disable_dp){
+void DISPLAY_nDP(uint16_t num){
+
+	DISPLAY_reset();
 
 	extractNumber(num);
 
+	disable_decimal();
 
-	if((disable_dp-1) < 255){
-		temp_dp = DPF[disable_dp-1];
-		DPF[disable_dp-1] = 0;
-		dp_disable = disable_dp-1;
-	}
+	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
+	TCNT2 = 0x1E;
+}
 
-	if((disable_dp-1) == 255){
+void DISPLAY_flick(uint16_t number, uint16_t flick_number){
+	
+	DISPLAY_reset();
 
-		for(uint8_t i = 0; i < GROUND_SIZE; i++){
-			temp_DPF[i] = DPF[i];
-			DPF[i] = 0;
+	extractNumber(number);
+
+	disable_decimal();
+
+	while(flick_number){
+
+		uint8_t digit = flick_number % 10;
+
+		if(digit > 0){
+			Flick_Array[digit-1] = 1;
 		}
 
-		dp_disable = disable_dp-1;
+		flick_number /= 10;
 	}
 
+    Flick_Flag = 1;
 
 	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
@@ -217,21 +247,16 @@ void DISPLAY_nDP(uint16_t num, uint8_t disable_dp){
 
 void DISPLAY_reset(){
 
+	_TCR2B_ &= ~(1 << _CS22_) & ~(1 << _CS21_) & ~(1 << _CS20_);
+
 	groundCount = 0;
 	pattern = 0;
 	second_timing = 0;
 	dp_check = 0;
+	Flick_Flag = 0;
 
-	if(dp_disable < 255){
-		DPF[dp_disable] = temp_dp;
+	for(uint8_t i = 0; i < GROUND_SIZE; i++){
+		DPF[i] = temp_DPF[i];
+		Flick_Array[i] = 0;
 	}
-
-	if(dp_disable == 255){
-
-		for(uint8_t i = 0; i < GROUND_SIZE; i++){
-			DPF[i] = temp_DPF[i];
-		}
-	}
-
-	_TCR2B_ &= ~(1 << _CS22_) & ~(1 << _CS21_) & ~(1 << _CS20_);
 }
