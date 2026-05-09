@@ -14,8 +14,12 @@
 			The number of times/frequency of the TIMER0 overflow
 			in a single second
 			*/
-#define 	HOUR_OVF		12
+#define 	HOUR_OVF		(13)
 
-#define 	MINUTE_OVF		60
+#define 	MINUTE_OVF		(60)
+
+#define 	LONG_CLICK		(125)
+
+#define 	SHORT_CLICK		(20)
 
 #endif /* _CONFIG_H_ */
