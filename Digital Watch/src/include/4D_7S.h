@@ -44,7 +44,7 @@ void DISPLAY_wChar(uint16_t character, uint8_t number);
 
 void DISPLAY_nDP(uint16_t num);
 
-void DISPLAY_flick(uint16_t number, uint16_t flick_number);
+void DISPLAY_flick(uint16_t number, uint16_t flick_number, uint8_t disable_dp);
 
 void DISPLAY_reset();
 

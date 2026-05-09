@@ -25,9 +25,9 @@
 volatile uint8_t *LED_DISPLAY_PORT;
 volatile uint8_t *LED_DISPLAY_GROUND;
 
-static uint8_t groundCount = 0;
+volatile static uint8_t groundCount = 0;
 
-static uint8_t pattern = 0;
+volatile static uint8_t pattern = 0;
 
 static uint8_t numberArray[GROUND_SIZE];
 
@@ -47,7 +47,9 @@ static uint16_t mid_cycle_compare = 0;
 
 static uint8_t Flick_Array[GROUND_SIZE] = {0, 0, 0, 0};
 
-static uint8_t Flick_Flag = 0;
+volatile static uint8_t Flick_Flag = 0;
+
+volatile static uint8_t dp_disable_flag = 0;
 
 
 // THIS IS THE ARRAY WITHOUT DECIMAL POINTS
@@ -86,12 +88,6 @@ ISR(_TIMER2_COMPA_) {
 
     if(Flick_Array[groundCount] && !Flick_Flag){
 
-    	// if(Flick_Flag){
-    	// 	*LED_DISPLAY_PORT = pattern;
-    	// }else{
-    	// 	*LED_DISPLAY_PORT = 0;
-    	// }
-
     	*LED_DISPLAY_PORT = 0;
     }else{
 
@@ -124,6 +120,8 @@ static inline void initTIMER_2(void) {
 
 static void extractNumber(uint16_t number) {
 
+	cli();
+
 	dp_check = 1;
 
     for(uint8_t i = 3; i < 255; i--){
@@ -133,6 +131,8 @@ static void extractNumber(uint16_t number) {
 
     	number /= 10;
     }
+
+    sei();
 }
 
 
@@ -152,11 +152,11 @@ void initLED_DISPLAY(volatile uint8_t *PORT_1, volatile uint8_t *PORT_2, uint8_t
 
 	//WITH THIS, A USER CAN PASS '0' IF HE DOESN'T WANT DPs
 
-	if((--dp_mask) < 4){
+	if((--dp_mask) < (GROUND_SIZE)){
 		DPF[dp_mask] = 1;
 	}
 
-	if(dp_mask == 255){
+	if((dp_mask) == 255){
 		for(uint8_t i = 0; i < GROUND_SIZE; i++){
 			DPF[i] = 0;
 		}
@@ -191,6 +191,8 @@ static void disable_decimal(){
 		temp_DPF[i] = DPF[i];
 		DPF[i] = 0;
 	}
+
+	dp_disable_flag = 1;
 }
 
 void DISPLAY_wChar(uint16_t character, uint8_t number){
@@ -220,19 +222,21 @@ void DISPLAY_nDP(uint16_t num){
 	TCNT2 = 0x1E;
 }
 
-void DISPLAY_flick(uint16_t number, uint16_t flick_number){
+void DISPLAY_flick(uint16_t number, uint16_t flick_number, uint8_t disable_dp){
 	
 	DISPLAY_reset();
 
 	extractNumber(number);
 
-	disable_decimal();
+	if(disable_dp){
+		disable_decimal();
+	}
 
 	while(flick_number){
 
 		uint8_t digit = flick_number % 10;
 
-		if(digit > 0){
+		if((digit > 0) && (digit < 5)){
 			Flick_Array[digit-1] = 1;
 		}
 
@@ -247,16 +251,26 @@ void DISPLAY_flick(uint16_t number, uint16_t flick_number){
 
 void DISPLAY_reset(){
 
+	cli();
+
 	_TCR2B_ &= ~(1 << _CS22_) & ~(1 << _CS21_) & ~(1 << _CS20_);
+	
+	for(uint8_t i = 0; i < GROUND_SIZE; i++){
+
+		Flick_Array[i] = 0;
+
+		if(dp_disable_flag){
+		
+			DPF[i] = temp_DPF[i];
+		}
+	}
 
 	groundCount = 0;
-	pattern = 0;
 	second_timing = 0;
+	pattern = 0;
 	dp_check = 0;
 	Flick_Flag = 0;
+	dp_disable_flag = 0;
 
-	for(uint8_t i = 0; i < GROUND_SIZE; i++){
-		DPF[i] = temp_DPF[i];
-		Flick_Array[i] = 0;
-	}
+	sei();
 }
