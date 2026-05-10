@@ -6,6 +6,7 @@
 #include<avr/interrupt.h>
 #include<util/delay.h>
 #include<avr/power.h>
+#include<util/atomic.h>
 
 #include "reg_defs_t.h"
 #include "4D_7S.h"
@@ -14,44 +15,33 @@
 #include "config.h"
 
 
-#define 	DEBOUNCE_DELAY 	1500
-#define 	OPR_SECTION    	4 /* 
-					Entire Operation Section <Including time[1],
-					temperature[2], humidity[3] and date[4]>.
-					*/ 
-#define 	SETUP_SECTION	5 /* 
-					Entire Setup Section <Including hour[1],
-					minute[2], day[3], month[4] and year[5]>.
-					*/ 
 
-
-
-volatile static uint8_t setup_flag = 0;
-volatile static uint8_t setup_click = 0;
-volatile static uint8_t setup_update = 0;
+volatile uint8_t setup_flag = 0;
+volatile uint8_t setup_click = 0;
+volatile uint8_t setup_update = 0;
+volatile uint8_t setup_increase = 0;
 
 volatile static uint8_t hour = 7;
 volatile static uint8_t minute = 54; 
 volatile static uint8_t seconds = 0;
-volatile static uint8_t day = 9;
+volatile static uint8_t day = 10;
 volatile static uint8_t month = 5;
 volatile static uint16_t year = 2026;
 
-volatile static uint8_t button_state = 0;
-volatile static uint8_t button_click = 0;
+volatile uint8_t button_state = 0;
+volatile uint8_t button_click = 0;
 
-volatile static uint8_t button_flag = 0;
-volatile static uint16_t isr_flag = 0;
+volatile uint16_t isr_flag = 0;
 
-volatile static uint8_t power_on = 0;
-volatile static uint8_t ovf_counter = 0;
+volatile uint8_t power_on = 0;
+volatile uint8_t ovf_counter = 0;
 
 static uint8_t temp_ = 0;
 static uint8_t humd_ = 0;
-volatile static uint8_t update_tnh = 0;
+volatile uint8_t update_tnh = 0;
 
-volatile static uint16_t display_number = 0;
-// volatile static uint8_t display_check = 0;
+volatile uint16_t display_number = 0;
+volatile uint8_t display_on = 0;
 
 
 uint8_t _4D_7S_Ground[] = {LED_GP1, LED_GP2, LED_GP3, LED_GP4};
@@ -62,6 +52,7 @@ static inline void init4D_7S(void);
 static inline void endRun(void);
 
 static void setupWatch(void);
+static inline void handleSetup(void);
 
 
 /* ISR (On PORTB) From the DHT_11.h setup */
@@ -71,18 +62,13 @@ ISR(PCINT0_vect){
 }
 
 
-// /* Push Button Interrupt */
-// ISR(PCINT1_vect){
-
-// 	button_state = 1;
-// }
-
-
 /* ISR for updating the Time and date */
 ISR(_TIMER0_COMPA_){
-	ovf_counter = (ovf_counter + 1) % (F_OVERFLOW);
 
-	if(!(ovf_counter)){
+	if((++ovf_counter) >= F_OVERFLOW) {
+
+	    ovf_counter = 0;
+
 		seconds = (seconds + 1) % 60;
 		power_on = (power_on + 1) % OPR_TIME;
 
@@ -111,13 +97,20 @@ ISR(_TIMER0_COMPA_){
 			 
 			if((!setup_flag) && (isr_flag < (LONG_CLICK))){
 
-				button_flag = 1;
+				button_state = 1;
 				setup_update = 0;
 				setup_flag = 0;
 				setup_click = 0;
-			}else{
+			}else if(display_on){
+
+				if(isr_flag < (LONG_CLICK)){
+					setup_increase = 1;
+				}
+
 				setup_update = 1;
 				setup_flag = 1;
+				button_state = 0;
+				button_click = 0;
 			}
 
 			isr_flag = 0;
@@ -128,6 +121,8 @@ ISR(_TIMER0_COMPA_){
 
 
 int main(void){
+
+	clock_prescale_set(clock_div_1);
 
 	initTimer0();
 
@@ -146,14 +141,11 @@ int main(void){
 
 	while(1){
 
-		if(button_flag){
-			button_flag = 0;
-			power_on = 1;
-			button_state = 1;
-			init4D_7S();
-		}
-
 		if(button_state){
+
+			init4D_7S();
+
+			power_on = 1;
 
 			switch(button_click){
 				case 0:{
@@ -184,9 +176,8 @@ int main(void){
 		}
 
 		if(setup_flag){
-			setup_update = 1;
+
 			setupWatch();
-			setup_flag = 0;
 		}
 
 		if(update_tnh){
@@ -226,6 +217,8 @@ static inline void init4D_7S(void){
 
 	LED_LIVE_DDR |= (0xff);
 	LED_GROUND_DDR |= (0xf);
+
+	display_on = 1;
 }
 
 
@@ -238,61 +231,102 @@ static inline void endRun(void){
 	setup_update = 0;
 	setup_click = 0;
 
-	power_on = 0;
 	button_click = 0;
 	button_state = 0;
-	button_flag = 0;
+
+	display_on = 0;
+	power_on = 0;
 	isr_flag = 0;
+}
+
+
+static inline void handleSetup(void){
+
+	switch(--setup_click){
+		case 0:{
+			if((++hour) == (HOUR_OVF)){
+				hour = 1;
+			}
+			break;
+		}
+		case 1:{
+			if((++minute) == (MINUTE_OVF)){
+				minute = 0;
+			}
+			break;
+		}
+		case 2:{
+			if((++day) == (DAY_OVF)){
+				day = 1;
+			}
+			break;
+		}
+		case 3:{
+			if((++month) == (MONTH_OVF)){
+				month = 1;
+			}
+			break;
+		}
+		case 4:{
+			if((++year) == (YEAR_OVF_VAL)){
+				year = (YEAR_OVF_TRUE);
+			}
+			break;
+		}
+	}
 }
 
 
 static void setupWatch(void){
 
-	while((power_on) && (setup_flag)){
+	if(setup_update){
 
-		if(setup_update){
-
-			power_on = 1;
-
-			switch(setup_click){
-					case 0:{
-						display_number = (hour*100) + (minute);
-						DISPLAY_flick(display_number, 12, 0);
-						break;
-					}
-					case 1:{
-						display_number = (hour*100) + (minute);
-						DISPLAY_flick(display_number, 34, 0);
-						break;
-					}
-					case 2:{
-						display_number = (day*100) + (month);
-						DISPLAY_flick(display_number, 12, 1);
-						break;
-					}
-					case 3:{
-						display_number = (day*100) + (month);
-						DISPLAY_flick(display_number, 34, 1);
-						break;
-					}
-					case 4:{
-						display_number = (year);
-						DISPLAY_flick(year, 1234, 1);
-						break;
-					}
+		if(setup_increase){
+			if(setup_click){
+				handleSetup();
 			}
-
-			if((++setup_click) >= (SETUP_SECTION)){
-				setup_flag = 0;
-				setup_click = 0;
-				setup_update = 0;
-				button_flag = 0;
-				button_click = 0;
-			}
-
-			setup_update = 0;
 		}
+
+		power_on = 1;
+
+		switch(setup_click){
+			case 0:{
+				display_number = (hour*100) + (minute);
+				DISPLAY_flick(display_number, 12, 0);
+				break;
+			}
+			case 1:{
+				display_number = (hour*100) + (minute);
+				DISPLAY_flick(display_number, 34, 0);
+				break;
+			}
+			case 2:{
+				display_number = (day*100) + (month);
+				DISPLAY_flick(display_number, 12, 1);
+				break;
+			}
+			case 3:{
+				display_number = (day*100) + (month);
+				DISPLAY_flick(display_number, 34, 1);
+				break;
+			}
+			case 4:{
+				ATOMIC_BLOCK(ATOMIC_FORCEON){
+					display_number = (year);
+				}
+				DISPLAY_flick(year, 1234, 1);
+				break;
+			}
+		}
+
+		if((++setup_click) > (SETUP_SECTION)){
+			setup_click = 0;
+			setup_flag = 0;
+			button_state = 1;
+		}
+
+		setup_increase = 0;
+		setup_update = 0;
 	}
 
-	setup_click = 0;
 }
