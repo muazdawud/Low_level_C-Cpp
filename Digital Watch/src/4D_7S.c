@@ -175,11 +175,7 @@ void DISPLAY(uint16_t num, uint8_t pm_check){
 
 	extractNumber(num);
 
-	if(pm_check){
-		DPF[3] = 1;
-	}else{
-		DPF[3] = 0;
-	}
+	DPF[3] = pm_check;
 
 	_TCR2B_ |= (1 << _CS22_) | (1 << _CS21_) | (1 << _CS20_);
 	TCNT2 = 0x1E;
@@ -241,12 +237,8 @@ void DISPLAY_flick(uint16_t number, uint16_t flick_number, uint8_t disable_dp, u
 		disable_decimal();
 	}
 
-	if(pm_check){
-		DPF[3] = 1;
-	}else{
-		DPF[3] = 0;
-	}
-
+	DPF[3] = pm_check;
+	
 	while(flick_number){
 
 		uint8_t digit = flick_number % 10;
