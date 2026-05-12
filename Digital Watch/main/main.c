@@ -33,6 +33,8 @@ volatile uint8_t button_state = 0;
 volatile uint8_t button_click = 0;
 
 volatile uint16_t isr_flag = 0;
+volatile uint8_t buzzer_flag = 0;
+volatile uint8_t buzzer_counter = 0;
 
 volatile uint8_t power_on = 0;
 volatile uint8_t ovf_counter = 0;
@@ -85,6 +87,12 @@ ISR(_TIMER0_COMPA_){
 				update_tnh = 1;
 			}
 		}
+	}
+
+	if((buzzer_flag) && ((++buzzer_counter) >= BUZZER_OVF)){
+
+		buzzer_flag = 0;
+		buzzer_counter = 0;
 	}
 
 	if(bit_is_clear(PB_PIN, PUSH_BUTTON)){
@@ -141,6 +149,8 @@ int main(void){
 	PB_DDR &= ~(1 << PUSH_BUTTON);
 	PB_PORT |= (1 << PUSH_BUTTON);
 
+	BUZZER_DDR |= (1 << BUZZER);
+
 	day_ovf = DAY_OVF(month, year);
 
 	while(1){
@@ -148,6 +158,11 @@ int main(void){
 		if(button_state){
 
 			init4D_7S();
+
+			if(buzzer_flag){
+	
+				BUZZER_PORT |= (1 << BUZZER);
+			}
 
 			power_on = 1;
 
@@ -182,6 +197,11 @@ int main(void){
 		if(setup_flag){
 
 			setupWatch();
+		}
+
+		if(!buzzer_flag){
+
+			BUZZER_PORT &= ~(1 << BUZZER);
 		}
 
 		if(update_tnh){
@@ -222,6 +242,8 @@ static inline void init4D_7S(void){
 	LED_LIVE_DDR |= (0xff);
 	LED_GROUND_DDR |= (0xf);
 
+	buzzer_counter = 0;
+	buzzer_flag = 1;
 	display_on = 1;
 }
 
@@ -230,6 +252,8 @@ static inline void endRun(void){
 
 	LED_LIVE_DDR &= ~(0xff);
 	LED_GROUND_DDR &= ~(0xf);
+
+	BUZZER_PORT &= ~(1 << BUZZER);
 
 	setup_flag = 0;
 	setup_update = 0;
