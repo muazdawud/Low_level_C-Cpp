@@ -21,6 +21,7 @@ volatile uint8_t setup_click = 0;
 volatile uint8_t setup_update = 0;
 volatile uint8_t setup_increase = 0;
 
+volatile uint8_t pm_indicator = 0;
 volatile static uint8_t hour = 10;
 volatile static uint8_t minute = 42; 
 volatile static uint8_t seconds = 0;
@@ -82,6 +83,7 @@ ISR(_TIMER0_COMPA_){
 
 				if((++hour) == HOUR_OVF){
 					hour = 1;
+					pm_indicator ^= 1;
 				}
 
 				update_tnh = 1;
@@ -104,17 +106,23 @@ ISR(_TIMER0_COMPA_){
 	if(isr_flag){
 
 		if(bit_is_set(PB_PIN, PUSH_BUTTON)){
+
+			uint16_t check_isr = 0;
+
+			ATOMIC_BLOCK(ATOMIC_FORCEON){
+				check_isr = isr_flag;
+			}
 			 
-			if((!setup_flag) && ((isr_flag < (LONG_CLICK)) && (isr_flag > SHORT_CLICK))){
+			if((!setup_flag) && ((check_isr < (LONG_CLICK)) && (check_isr > SHORT_CLICK))){
 				
 					button_state = 1;
 					setup_update = 0;
 					setup_flag = 0;
 					setup_click = 0;
 				
-			}else if(display_on && (isr_flag > SHORT_CLICK)){
+			}else if(display_on && (check_isr > SHORT_CLICK)){
 
-				if((isr_flag < (LONG_CLICK))){
+				if((check_isr < (LONG_CLICK))){
 					setup_increase = 1;
 				}
 
@@ -168,7 +176,7 @@ int main(void){
 			switch(button_click){
 				case 0:{
 					display_number = (hour*100) + (minute);
-					DISPLAY(display_number);
+					DISPLAY(display_number, pm_indicator);
 					break;
 				}
 				case 1:{
@@ -268,6 +276,7 @@ static inline void handleSetup(void){
 		case 0:{
 			if((++hour) >= (HOUR_OVF)){
 				hour = 1;
+				pm_indicator ^= 1;
 			}
 			break;
 		}
@@ -315,29 +324,29 @@ static void setupWatch(void){
 		switch(setup_click){
 			case 0:{
 				display_number = (hour*100) + (minute);
-				DISPLAY_flick(display_number, 12, 0);
+				DISPLAY_flick(display_number, 12, 0, pm_indicator);
 				break;
 			}
 			case 1:{
 				display_number = (hour*100) + (minute);
-				DISPLAY_flick(display_number, 34, 0);
+				DISPLAY_flick(display_number, 34, 0, pm_indicator);
 				break;
 			}
 			case 2:{
 				display_number = (day*100) + (month);
-				DISPLAY_flick(display_number, 12, 1);
+				DISPLAY_flick(display_number, 12, 1, 0);
 				break;
 			}
 			case 3:{
 				display_number = (day*100) + (month);
-				DISPLAY_flick(display_number, 34, 1);
+				DISPLAY_flick(display_number, 34, 1, 0);
 				break;
 			}
 			case 4:{
 				ATOMIC_BLOCK(ATOMIC_FORCEON){
 					display_number = (year);
 				}
-				DISPLAY_flick(year, 1234, 1);
+				DISPLAY_flick(year, 1234, 1, 0);
 				break;
 			}
 		}
