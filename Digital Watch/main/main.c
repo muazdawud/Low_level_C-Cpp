@@ -36,6 +36,7 @@ volatile uint8_t button_click = 0;
 volatile uint16_t isr_flag = 0;
 volatile uint8_t buzzer_flag = 0;
 volatile uint8_t buzzer_counter = 0;
+volatile uint8_t endRun_flag = 0;
 
 volatile uint8_t power_on = 0;
 volatile uint8_t ovf_counter = 0;
@@ -74,7 +75,14 @@ ISR(_TIMER0_COMPA_){
 	    ovf_counter = 0;
 
 		seconds = (seconds + 1) % 60;
-		power_on = (power_on + 1) % OPR_TIME;
+
+		if(++power_on >= OPR_TIME){
+			power_on = 0;
+
+			if(endRun_flag == 1){
+				endRun_flag = 0;
+			}
+		}
 
 		if(!(seconds)){
 			minute = (minute + 1) % MINUTE_OVF;
@@ -214,7 +222,7 @@ int main(void){
 			update_tnh = 0;
 		}
 
-		if(!power_on){
+		if(!power_on && !endRun_flag){
 			DISPLAY_reset();
 			endRun();
 		}
@@ -244,6 +252,7 @@ static inline void init4D_7S(void){
 	LED_LIVE_DDR |= (0xff);
 	LED_GROUND_DDR |= (0xf);
 
+	endRun_flag = 1;
 	buzzer_counter = 0;
 	buzzer_flag = 1;
 	display_on = 1;
@@ -252,10 +261,14 @@ static inline void init4D_7S(void){
 
 static inline void endRun(void){
 
+	endRun_flag = 2;
+
+	buzzer_counter = 0;
+	buzzer_flag = 1;
+	BUZZER_PORT |= (1 << BUZZER);
+
 	LED_LIVE_DDR &= ~(0xff);
 	LED_GROUND_DDR &= ~(0xf);
-
-	BUZZER_PORT &= ~(1 << BUZZER);
 
 	setup_flag = 0;
 	setup_update = 0;
