@@ -91,6 +91,7 @@ ISR(_TIMER0_COMPA_){
 
 	if((buzzer_flag) && ((++buzzer_counter) >= BUZZER_OVF)){
 
+		BUZZER_PORT &= ~(1 << BUZZER);
 		buzzer_flag = 0;
 		buzzer_counter = 0;
 	}
@@ -157,13 +158,11 @@ int main(void){
 
 		if(button_state){
 
-			init4D_7S();
-
-			if(buzzer_flag){
-	
+			if(!display_on){
+				init4D_7S();
 				BUZZER_PORT |= (1 << BUZZER);
 			}
-
+			
 			power_on = 1;
 
 			switch(button_click){
@@ -197,11 +196,6 @@ int main(void){
 		if(setup_flag){
 
 			setupWatch();
-		}
-
-		if(!buzzer_flag){
-
-			BUZZER_PORT &= ~(1 << BUZZER);
 		}
 
 		if(update_tnh){
