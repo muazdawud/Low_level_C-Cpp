@@ -8,7 +8,7 @@
 #include<util/delay.h>
 
 
-#define 	DELAY	3   /*
+#define 	DELAY	5   /*
 					A magnitude of 1 DELAY is to be interpretted
 					as ~0.001024s which is ~1.02ms (which eliminates
 					visible flicker).
@@ -28,7 +28,7 @@ volatile uint8_t displayA = 0;
 volatile uint8_t displayB = 255;
 volatile uint8_t delay_check = 0;
 volatile uint8_t update = 0;
-uint8_t difference = 0;
+int8_t difference = 0;
 
 static inline void initTimer(void);
 
@@ -48,12 +48,12 @@ ISR(TIMER0_OVF_vect){
 
 ISR(TIMER0_COMPA_vect){
 
-	PORTB &= ~(1 << PB0) & ~(1 << PB2) & ~(1 << PB4);
+	PORTB &= ~((1 << PB0) | (1 << PB2) | (1 << PB4));
 }
 
 ISR(TIMER0_COMPB_vect){
 
-	PORTB &= ~(1 << PB1) & ~(1 << PB3) & ~(1 << PB5);
+	PORTB &= ~((1 << PB1) | (1 << PB3) | (1 << PB5));
 }
 
 
