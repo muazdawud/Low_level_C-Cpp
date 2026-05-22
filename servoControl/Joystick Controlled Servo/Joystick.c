@@ -17,7 +17,7 @@ void initADC(void){
 
 	clock_prescale_set(clock_div_1);
 
-	ADMUX |= (1 << REFS0);
+	// ADMUX |= (1 << REFS0);
 
 	ADCSRA &= ~(0xff);
 
@@ -32,7 +32,7 @@ void initADC(void){
 
 uint16_t analogGet(uint8_t multiplexer){
 
-	ADMUX = (0xf0 & ADMUX) | multiplexer;
+	ADMUX = (0xf0 & ADMUX) | (multiplexer);
 
 	ADCSRA |= (1 << ADSC);
 
