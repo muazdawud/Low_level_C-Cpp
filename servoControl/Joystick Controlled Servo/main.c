@@ -1,7 +1,7 @@
 
 
 /*
-	This file ocntains my first servo tests
+	This file contains my first servo tests
 	*/
 
 #include<avr/io.h>
@@ -43,6 +43,7 @@ static inline void initTimer(void){
 	TCCR1A |= (1 << WGM11);
 	TCCR1B |= (1 << WGM12) | (1 << WGM13);
 
+	/* A Prescaler of 64 */
 	TCCR1B |= (1 << CS11) | (1 << CS10);
 
 	TIMSK1 |= (1 << ICIE1);
@@ -75,7 +76,7 @@ static uint16_t map(uint16_t input){
 	/* 
 		 No need for the extra load, we alredy know the oldMax and oldMin
 		 through the PULSE_MAX and PULSE_MIN macro, and our newLow and
-		 newHigh will be 1023 and 0, from the ADC 10-bit buffer
+		 newHigh will be 1023 and 0 respectively, from the ADC 10-bit buffer
 		 */
 
 	return ( ( ((uint32_t)input * (PULSE_MIN - PULSE_MAX) ) / 1023) + PULSE_MAX);
